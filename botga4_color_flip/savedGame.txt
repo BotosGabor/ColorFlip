@@ -1,4 +1,6 @@
-2
-1
-OO
-XO
+4
+0
+OXXO
+OOXO
+OOOO
+OOXO

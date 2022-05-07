@@ -13,32 +13,33 @@ import static com.botga4.Window.Game;
 import static com.botga4.Window.Menu;
 
 public class ColorFlip {
-    private static String input;
     private static boolean exit = false;
+    private static int size;
+    private static int stepCount = 0;
+    private static boolean[][] board;
+    private static boolean[][] flipped;
+    private static String input;
     private static Window window = Menu;
-    private static final Scanner consoleScanner = new Scanner(System.in);
-    private static final File file = new File("savedGame.txt");
     private static Scanner fileScanner;
     private static FileWriter fileWriter;
-    private static boolean[][] board;
-    private static int size;
+    private static final Scanner consoleScanner = new Scanner(System.in);
+    private static final File file = new File("savedGame.txt");
     private static final Random random = new Random();
-    private static int stepCount = 0;
 
     public static void run() {
         initialize();
         while (!exit) {
             switch (window) {
-                case Menu -> showMenu(); // only writes to console
-                case Game -> showGame(); // only writes to console
+                case Menu -> showMenu();
+                case Game -> showGame();
             }
             handleCommand();
         }
     }
 
     private static void initialize() {
+        welcome();
         try {
-            welcome();
             fileScanner = new Scanner(file);
         } catch (FileNotFoundException e) {
             handleFileNotFound();
@@ -63,6 +64,7 @@ public class ColorFlip {
         In-Game:
             save  -> Save current game.
             stop  -> Stop current game.
+            solve -> Give solution for current game.
             x y   -> Flip all elements of row #x and column #y.""");
     }
 
@@ -70,11 +72,7 @@ public class ColorFlip {
         System.out.println("Board content:");
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                if (board[i][j]) {
-                    System.out.print('O');
-                } else {
-                    System.out.print('X');
-                }
+                System.out.print(board[i][j]? 'O' : 'X');
             }
             System.out.println();
         }
@@ -88,6 +86,7 @@ public class ColorFlip {
             case "load" -> handleLoad();
             case "save" -> handleSave();
             case "stop" -> handleStop();
+            case "solve" -> handleSolve();
             case "exit" -> handleExit();
         }
     }
@@ -107,7 +106,9 @@ public class ColorFlip {
 
     private static void handleFlip() {
         int[] xy = getCoordinates();
-        flipByCoordinates(xy);
+        int x = xy[0];
+        int y = xy[1];
+        flipByCoordinates(x, y);
         stepCount++;
         checkWin();
     }
@@ -125,14 +126,15 @@ public class ColorFlip {
         return new int[]{x-1, y-1};
     }
 
-    private static void flipByCoordinates(int[] xy) {
-        int x = xy[0];
-        int y = xy[1];
+    private static void flipByCoordinates(int x, int y) {
         for (int i = 0; i < size; i++) {
             board[x][i] = !board[x][i];
             board[i][y] = !board[i][y];
         }
         board[x][y] = !board[x][y];
+        if (size % 2 == 1) {
+            flipped[x][y] = !flipped[x][y];
+        }
     }
 
     private static void checkWin() {
@@ -205,13 +207,23 @@ public class ColorFlip {
     }
 
     private static void shuffleTrueBoard() {
+        initializeFlipped();
         int floor = size/2 + 1;
         int ceil = (int) Math.ceil(Math.pow(size, 1.5));
         int iterationCount = random.nextInt(floor, ceil);
         for (int i = 0; i < iterationCount; i++) {
             int x = random.nextInt(size);
             int y = random.nextInt(size);
-            flipByCoordinates(new int[]{x, y});
+            flipByCoordinates(x, y);
+        }
+    }
+
+    private static void initializeFlipped() {
+        flipped = new boolean[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                flipped[i][j] = false;
+            }
         }
     }
 
@@ -299,6 +311,14 @@ public class ColorFlip {
             handleBadCommand();
         } else {
             window = Menu;
+        }
+    }
+
+    private static void handleSolve() {
+        if (size % 2 == 0) {
+            Solver.printEvenSolution(board);
+        } else {
+            Solver.printOddSolution(flipped);
         }
     }
 
